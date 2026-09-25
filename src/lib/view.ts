@@ -9,12 +9,21 @@ import {
   type Avatar,
   type Build,
   type BuildStatus,
+  type PhotoCredit,
   type VersionFileName,
 } from "./db";
 
 export const fileUrl = (key: string) => `/api/files/${key}`;
 
-export type PhotoView = { id: string; slot: SlotId; url: string; width: number; height: number; warnings: string[] };
+export type PhotoView = {
+  id: string;
+  slot: SlotId;
+  url: string;
+  width: number;
+  height: number;
+  warnings: string[];
+  credit: PhotoCredit | null;
+};
 
 export type BuildView = {
   id: string;
@@ -42,6 +51,10 @@ export type VersionView = {
 export type AvatarView = {
   id: string;
   name: string;
+  /** Public-domain showcase avatar. */
+  demo: boolean;
+  /** True when the viewer isn't the owner (demo avatars): no uploads, builds or deletes. */
+  readOnly: boolean;
   createdAt: string;
   photos: PhotoView[];
   builds: BuildView[];
@@ -63,18 +76,21 @@ function buildView(b: Build): BuildView {
   };
 }
 
-export function avatarView(avatar: Avatar): AvatarView {
+export function avatarView(avatar: Avatar, isOwner = true): AvatarView {
   const photos = listPhotos(avatar.id);
   const active = activeBuild(avatar.id);
   const missing = SLOTS.filter((s) => s.required && !photos.some((p) => p.slot === s.id));
 
   let canBuild: AvatarView["canBuild"] = { ok: true };
-  if (active) canBuild = { ok: false, reason: "A build is already in progress." };
+  if (!isOwner) canBuild = { ok: false, reason: "Only the owner can build this avatar." };
+  else if (active) canBuild = { ok: false, reason: "A build is already in progress." };
   else if (missing.length) canBuild = { ok: false, reason: `Add these photos first: ${missing.map((s) => s.label).join(", ")}.` };
 
   return {
     id: avatar.id,
     name: avatar.name,
+    demo: avatar.demo,
+    readOnly: !isOwner,
     createdAt: avatar.createdAt,
     photos: photos.map((p) => ({
       id: p.id,
@@ -83,6 +99,7 @@ export function avatarView(avatar: Avatar): AvatarView {
       width: p.width,
       height: p.height,
       warnings: p.checks.warnings ?? [],
+      credit: p.credit,
     })),
     builds: listBuilds(avatar.id).map(buildView),
     versions: listVersions(avatar.id).map((v) => ({

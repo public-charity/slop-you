@@ -10,7 +10,8 @@
     "postinstall": "node scripts/copy-mediapipe.mjs",
     "predev": "node scripts/copy-mediapipe.mjs",
     "prebuild": "node scripts/copy-mediapipe.mjs",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "1.0.1",
@@ -27,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "4.23.15",
     "typescript": "^5"
   },
   "description": "Photos in, rigged MetaHuman out (Unreal Engine 5.8+)",

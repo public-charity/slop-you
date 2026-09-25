@@ -12,11 +12,13 @@ export function PhotoSlotCard({
   avatarId,
   photos,
   onChange,
+  readOnly = false,
 }: {
   slot: Slot;
   avatarId: string;
   photos: PhotoView[];
   onChange: () => void;
+  readOnly?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -91,18 +93,31 @@ export function PhotoSlotCard({
                   !
                 </span>
               )}
-              <button
-                type="button"
-                onClick={() => remove(p.id)}
-                aria-label="Delete photo"
-                className="absolute right-1 top-1 rounded-full bg-ink/70 px-1.5 text-xs text-bg opacity-0 transition group-hover:opacity-100 focus:opacity-100"
-              >
-                ×
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={() => remove(p.id)}
+                  aria-label="Delete photo"
+                  className="absolute right-1 top-1 rounded-full bg-ink/70 px-1.5 text-xs text-bg opacity-0 transition group-hover:opacity-100 focus:opacity-100"
+                >
+                  ×
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
+
+      {photos
+        .filter((p) => p.credit)
+        .map((p) => (
+          <p key={`credit-${p.id}`} className="text-xs text-muted">
+            Photo: {p.credit!.author}, {p.credit!.date}. {p.credit!.license}.{" "}
+            <a href={p.credit!.url} target="_blank" rel="noreferrer" className="underline">
+              Source
+            </a>
+          </p>
+        ))}
 
       {errors.map((e) => (
         <p key={e} className="text-sm text-danger">
@@ -115,25 +130,29 @@ export function PhotoSlotCard({
         </p>
       ))}
 
-      <input
-        ref={input}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) void handleFile(file);
-        }}
-      />
-      <button
-        type="button"
-        disabled={phase !== "idle"}
-        onClick={() => input.current?.click()}
-        className="btn btn-ghost self-start"
-      >
-        {phase === "checking" ? "Checking…" : phase === "uploading" ? "Uploading…" : done ? "Add another" : "Add photo"}
-      </button>
+      {!readOnly && (
+        <>
+          <input
+            ref={input}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void handleFile(file);
+            }}
+          />
+          <button
+            type="button"
+            disabled={phase !== "idle"}
+            onClick={() => input.current?.click()}
+            className="btn btn-ghost self-start"
+          >
+            {phase === "checking" ? "Checking…" : phase === "uploading" ? "Uploading…" : done ? "Add another" : "Add photo"}
+          </button>
+        </>
+      )}
     </div>
   );
 }

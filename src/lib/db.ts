@@ -18,8 +18,19 @@ export type Avatar = {
   consentVersion: string;
   consentAt: string;
   currentVersionId: string | null;
+  /** Read-only showcase avatar built from public-domain photos (see scripts/seed-demo.ts). */
+  demo: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+/** Attribution for photos that didn't come from the avatar's owner (demo avatars). */
+export type PhotoCredit = {
+  title: string;
+  author: string;
+  date: string;
+  license: string;
+  url: string;
 };
 
 export type PhotoChecks = {
@@ -37,6 +48,7 @@ export type Photo = {
   width: number;
   height: number;
   checks: PhotoChecks;
+  credit: PhotoCredit | null;
   createdAt: string;
 };
 
@@ -144,7 +156,15 @@ const MIGRATIONS = [
   );
   CREATE INDEX versions_avatar ON versions(avatar_id, number);
   `,
+  `
+  ALTER TABLE avatars ADD COLUMN demo INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE photos ADD COLUMN credit_json TEXT;
+  CREATE INDEX avatars_demo ON avatars(demo, name);
+  `,
 ];
+
+/** Demo avatars have no session owner; this can never match a real session id. */
+export const DEMO_OWNER = "demo";
 
 function open(): DatabaseSync {
   fs.mkdirSync(config.dataDir, { recursive: true });
@@ -212,6 +232,7 @@ function toAvatar(r: Row): Avatar {
     consentVersion: r.consent_version as string,
     consentAt: r.consent_at as string,
     currentVersionId: (r.current_version_id as string | null) ?? null,
+    demo: Number(r.demo) === 1,
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
   };
@@ -226,6 +247,7 @@ function toPhoto(r: Row): Photo {
     width: Number(r.width),
     height: Number(r.height),
     checks: parseJson<PhotoChecks>(r.checks_json, {}),
+    credit: parseJson<PhotoCredit | null>(r.credit_json, null),
     createdAt: r.created_at as string,
   };
 }
@@ -277,6 +299,18 @@ export function createAvatar(input: { ownerSid: string; name: string; consentVer
   return getAvatar(id)!;
 }
 
+export function createDemoAvatar(name: string): Avatar {
+  const ts = now();
+  const id = newId("av");
+  db()
+    .prepare(
+      `INSERT INTO avatars (id, owner_sid, name, consent_version, consent_at, demo, created_at, updated_at)
+       VALUES (?, ?, ?, 'demo:public-domain', ?, 1, ?, ?)`,
+    )
+    .run(id, DEMO_OWNER, name, ts, ts, ts);
+  return getAvatar(id)!;
+}
+
 export function getAvatar(id: string): Avatar | null {
   const row = db().prepare("SELECT * FROM avatars WHERE id = ?").get(id);
   return row ? toAvatar(row) : null;
@@ -289,7 +323,14 @@ export type AvatarSummary = Avatar & {
 };
 
 export function listAvatarsForOwner(ownerSid: string): AvatarSummary[] {
-  const rows = db().prepare("SELECT * FROM avatars WHERE owner_sid = ? ORDER BY created_at DESC").all(ownerSid);
+  return summarize(db().prepare("SELECT * FROM avatars WHERE owner_sid = ? ORDER BY created_at DESC").all(ownerSid));
+}
+
+export function listDemoAvatars(): AvatarSummary[] {
+  return summarize(db().prepare("SELECT * FROM avatars WHERE demo = 1 ORDER BY name").all());
+}
+
+function summarize(rows: Row[]): AvatarSummary[] {
   return rows.map((row) => {
     const avatar = toAvatar(row);
     const count = db().prepare("SELECT COUNT(*) AS n FROM photos WHERE avatar_id = ?").get(avatar.id) as { n: number };
@@ -312,8 +353,8 @@ export function deleteAvatar(id: string): void {
 export function addPhoto(input: Omit<Photo, "createdAt">): Photo {
   db()
     .prepare(
-      `INSERT INTO photos (id, avatar_id, slot, storage_key, width, height, checks_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO photos (id, avatar_id, slot, storage_key, width, height, checks_json, credit_json, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       input.id,
@@ -323,6 +364,7 @@ export function addPhoto(input: Omit<Photo, "createdAt">): Photo {
       input.width,
       input.height,
       JSON.stringify(input.checks),
+      input.credit ? JSON.stringify(input.credit) : null,
       now(),
     );
   touchAvatar(input.avatarId);

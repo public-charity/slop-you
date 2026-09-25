@@ -1,7 +1,28 @@
 import Link from "next/link";
-import { listAvatarsForOwner } from "@/lib/db";
+import { listAvatarsForOwner, listDemoAvatars, type AvatarSummary } from "@/lib/db";
 import { readSessionId } from "@/lib/session";
 import { fileUrl } from "@/lib/view";
+
+function AvatarCard({ avatar: a }: { avatar: AvatarSummary }) {
+  return (
+    <Link href={`/avatars/${a.id}`} className="card flex gap-4 p-4 transition hover:border-ink/40">
+      <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-line/50">
+        {a.current?.files.preview && (
+          // eslint-disable-next-line @next/next/no-img-element -- private, cookie-authed file route
+          <img src={fileUrl(a.current.files.preview)} alt="" className="size-full object-cover object-top" />
+        )}
+      </div>
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="truncate font-semibold">{a.name}</span>
+        <span className="text-sm text-muted">
+          {a.photoCount} photo{a.photoCount === 1 ? "" : "s"}
+          {a.current ? ` · v${a.current.number}` : ""}
+        </span>
+        {a.latestBuild && <span className="font-mono text-xs text-muted">{a.latestBuild.status}</span>}
+      </div>
+    </Link>
+  );
+}
 
 const STEPS = [
   {
@@ -21,6 +42,7 @@ const STEPS = [
 export default async function Home() {
   const sid = await readSessionId();
   const avatars = sid ? listAvatarsForOwner(sid) : [];
+  const demos = listDemoAvatars();
 
   return (
     <div className="flex flex-col gap-16 pt-8 sm:pt-16">
@@ -60,22 +82,21 @@ export default async function Home() {
           <h2 className="text-2xl font-bold tracking-tight">Your avatars</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {avatars.map((a) => (
-              <Link key={a.id} href={`/avatars/${a.id}`} className="card flex gap-4 p-4 transition hover:border-ink/40">
-                <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-line/50">
-                  {a.current?.files.preview && (
-                    // eslint-disable-next-line @next/next/no-img-element -- private, cookie-authed file route
-                    <img src={fileUrl(a.current.files.preview)} alt="" className="size-full object-cover" />
-                  )}
-                </div>
-                <div className="flex min-w-0 flex-col gap-1">
-                  <span className="truncate font-semibold">{a.name}</span>
-                  <span className="text-sm text-muted">
-                    {a.photoCount} photo{a.photoCount === 1 ? "" : "s"}
-                    {a.current ? ` · v${a.current.number}` : ""}
-                  </span>
-                  {a.latestBuild && <span className="font-mono text-xs text-muted">{a.latestBuild.status}</span>}
-                </div>
-              </Link>
+              <AvatarCard key={a.id} avatar={a} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {demos.length > 0 && (
+        <section id="demos" className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Demo gallery</h2>
+            <p className="text-sm text-muted">Built from public-domain photographs of historical figures.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {demos.map((a) => (
+              <AvatarCard key={a.id} avatar={a} />
             ))}
           </div>
         </section>

@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Abraham Lincoln",
+    "died": 1865,
+    "file": "Abraham Lincoln O-77 matte collodion print.jpg",
+    "credit": { "author": "Alexander Gardner", "date": "8 November 1863", "license": "Public domain" }
+  },
+  {
+    "name": "Frederick Douglass",
+    "died": 1895,
+    "file": "Frederick Douglass (circa 1879).jpg",
+    "credit": { "author": "George Kendall Warren", "date": "c. 1879", "license": "Public domain" }
+  },
+  {
+    "name": "Harriet Tubman",
+    "died": 1913,
+    "file": "Harriet Tubman by Squyer, NPG, c1885.jpg",
+    "credit": { "author": "Horatio Seymour Squyer", "date": "c. 1885", "license": "Public domain" }
+  },
+  {
+    "name": "Charles Darwin",
+    "died": 1882,
+    "file": "Charles Darwin 01.jpg",
+    "credit": { "author": "Julia Margaret Cameron", "date": "1869", "license": "Public domain" }
+  },
+  {
+    "name": "Queen Victoria",
+    "died": 1901,
+    "file": "Queen Victoria by Bassano.jpg",
+    "credit": { "author": "Alexander Bassano", "date": "1882", "license": "Public domain" }
+  },
+  {
+    "name": "Mark Twain",
+    "died": 1910,
+    "file": "Mark Twain by AF Bradley.jpg",
+    "credit": { "author": "A. F. Bradley", "date": "1907", "license": "Public domain" }
+  },
+  {
+    "name": "Theodore Roosevelt",
+    "died": 1919,
+    "file": "Theodore Roosevelt by the Pach Bros.jpg",
+    "credit": { "author": "Pach Brothers (restored by Adam Cuerden)", "date": "1904", "license": "Public domain" }
+  },
+  {
+    "name": "Booker T. Washington",
+    "died": 1915,
+    "file": "Booker T Washington retouched flattened-crop.jpg",
+    "credit": { "author": "Harris & Ewing", "date": "1905", "license": "Public domain" }
+  },
+  {
+    "name": "Florence Nightingale",
+    "died": 1910,
+    "file": "Florence Nightingale (H Hering NPG x82368).jpg",
+    "credit": { "author": "Henry Hering", "date": "c. 1860", "license": "Public domain" }
+  },
+  {
+    "name": "Susan B. Anthony",
+    "died": 1906,
+    "file": "Susan B. (Susan Brownell) Anthony, 1820-1906 LCCN2001704086.jpg",
+    "credit": { "author": "Frances Benjamin Johnston", "date": "c. 1900", "license": "Public domain" }
+  }
+]

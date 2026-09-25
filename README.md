@@ -36,6 +36,10 @@ SLOP_WORKER_TOKEN=<same token> python worker/slop_worker.py --backend mock
 
 For the real pipeline on a UE machine, see [worker/README.md](worker/README.md).
 
+### Demo gallery
+
+`npm run seed:demo` creates read-only demo avatars from public-domain portraits on Wikimedia Commons (listed in [demo/people.json](demo/people.json)) and queues a build for each; run a worker to process them. Demo avatars are visible to everyone, can't be edited, and show photo credits. The seed script only accepts historical figures who died before 1926. Never add living or recent people: the product's rule is that everyone builds an avatar of themselves.
+
 ## Layout
 
 | Path | What |

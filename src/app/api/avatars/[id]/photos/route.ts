@@ -1,8 +1,8 @@
-import sharp from "sharp";
 import { isSlotId } from "@/lib/capture";
 import { config } from "@/lib/config";
 import { addPhoto, listPhotos, newId, type PhotoChecks } from "@/lib/db";
 import { fail, notFound } from "@/lib/http";
+import { normalizePhoto } from "@/lib/images";
 import { ownedAvatar } from "@/lib/session";
 import { keys, putBuffer } from "@/lib/storage";
 
@@ -45,13 +45,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/avatars/[id
     width,
     height,
     checks: sanitizeChecks(form?.get("checks")),
+    credit: null,
   });
   return Response.json({ id: photo.id }, { status: 201 });
-}
-
-/** Re-encodes to JPEG: applies EXIF orientation and drops all metadata (including GPS). */
-function normalizePhoto(input: Buffer) {
-  return sharp(input, { limitInputPixels: 80_000_000 }).rotate().jpeg({ quality: 92 }).toBuffer({ resolveWithObject: true });
 }
 
 /** Browser-side check results are advisory; keep only known, bounded fields. */

@@ -35,3 +35,11 @@ export async function ownedAvatar(avatarId: string): Promise<Avatar | null> {
   const avatar = getAvatar(avatarId);
   return avatar && avatar.ownerSid === sid ? avatar : null;
 }
+
+/** For read-only access: the owner's avatar, or any demo avatar. Demo avatars are never writable. */
+export async function viewableAvatar(avatarId: string): Promise<{ avatar: Avatar; isOwner: boolean } | null> {
+  const owned = await ownedAvatar(avatarId);
+  if (owned) return { avatar: owned, isOwner: true };
+  const avatar = getAvatar(avatarId);
+  return avatar?.demo ? { avatar, isOwner: false } : null;
+}

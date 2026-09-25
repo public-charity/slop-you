@@ -39,7 +39,10 @@ export function AvatarWorkspace({ initial }: { initial: AvatarView }) {
     if (res.ok) setView((await res.json()) as AvatarView);
   }, [view.id]);
 
-  useEffect(() => preloadFaceChecks(), []);
+  const { readOnly } = view;
+  useEffect(() => {
+    if (!readOnly) preloadFaceChecks();
+  }, [readOnly]);
 
   const building = view.activeBuild !== null;
   useEffect(() => {
@@ -81,13 +84,22 @@ export function AvatarWorkspace({ initial }: { initial: AvatarView }) {
     <div className="flex flex-col gap-10 pt-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow">Avatar</p>
+          <p className="eyebrow">{view.demo ? "Demo avatar" : "Avatar"}</p>
           <h1 className="text-3xl font-bold tracking-tight">{view.name}</h1>
         </div>
-        <button type="button" onClick={deleteAvatar} className="btn btn-danger">
-          Delete avatar
-        </button>
+        {!view.readOnly && (
+          <button type="button" onClick={deleteAvatar} className="btn btn-danger">
+            Delete avatar
+          </button>
+        )}
       </div>
+
+      {view.demo && (
+        <p className="rounded-2xl border border-line p-4 text-sm text-muted">
+          A showcase avatar built from a public-domain photograph of a historical figure. On slop.you, people can only
+          build avatars of themselves.
+        </p>
+      )}
 
       {/* Current version */}
       <section className="card grid gap-6 p-5 sm:grid-cols-[220px_1fr]">
@@ -139,62 +151,67 @@ export function AvatarWorkspace({ initial }: { initial: AvatarView }) {
       <section className="flex flex-col gap-4">
         <div>
           <h2 className="text-xl font-bold">Photos</h2>
-          <p className="text-sm text-muted">
-            Every build uses all of these. Adding more angles later gives the next build more to work with.
-          </p>
+          {!view.readOnly && (
+            <p className="text-sm text-muted">
+              Every build uses all of these. Adding more angles later gives the next build more to work with.
+            </p>
+          )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SLOTS.map((slot) => (
+          {SLOTS.filter((slot) => !view.readOnly || view.photos.some((p) => p.slot === slot.id)).map((slot) => (
             <PhotoSlotCard
               key={slot.id}
               slot={slot}
               avatarId={view.id}
               photos={view.photos.filter((p) => p.slot === slot.id)}
               onChange={refresh}
+              readOnly={view.readOnly}
             />
           ))}
         </div>
       </section>
 
       {/* Build */}
-      <section className="card flex flex-col gap-4 p-5">
-        <h2 className="text-xl font-bold">Build</h2>
-        {view.activeBuild ? (
-          <div className="flex items-center gap-3">
-            <span className="size-2.5 animate-pulse rounded-full bg-accent ring-4 ring-accent/30" />
-            <p>
-              {view.activeBuild.status === "queued"
-                ? "Queued. Waiting for an Unreal build machine…"
-                : `Building in Unreal (attempt ${view.activeBuild.attempts}). Conform, auto-rig, textures, assembly.`}
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              Quality
-              <select
-                value={quality}
-                onChange={(e) => setQuality(e.target.value as Quality)}
-                className="rounded-full border border-line bg-bg px-3 py-2"
-              >
-                <option value="MEDIUM">Medium (game-ready)</option>
-                <option value="HIGH">High</option>
-                <option value="CINEMATIC">Cinematic</option>
-              </select>
-            </label>
-            <button type="button" onClick={startBuild} disabled={!view.canBuild.ok || busy} className="btn btn-primary">
-              {view.versions.length ? `Rebuild with ${view.photos.length} photos` : "Build my MetaHuman"}
-            </button>
-          </div>
-        )}
-        {!view.activeBuild && !view.canBuild.ok && view.canBuild.reason && (
-          <p className="text-sm text-muted">{view.canBuild.reason}</p>
-        )}
-        {actionError && <p className="text-sm text-danger">{actionError}</p>}
-        {!view.activeBuild && lastBuild?.status === "failed" && (
-          <p className="text-sm text-danger">Last build failed: {lastBuild.error ?? "unknown error"}</p>
-        )}
-      </section>
+      {!view.readOnly && (
+        <section className="card flex flex-col gap-4 p-5">
+          <h2 className="text-xl font-bold">Build</h2>
+          {view.activeBuild ? (
+            <div className="flex items-center gap-3">
+              <span className="size-2.5 animate-pulse rounded-full bg-accent ring-4 ring-accent/30" />
+              <p>
+                {view.activeBuild.status === "queued"
+                  ? "Queued. Waiting for an Unreal build machine…"
+                  : `Building in Unreal (attempt ${view.activeBuild.attempts}). Conform, auto-rig, textures, assembly.`}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                Quality
+                <select
+                  value={quality}
+                  onChange={(e) => setQuality(e.target.value as Quality)}
+                  className="rounded-full border border-line bg-bg px-3 py-2"
+                >
+                  <option value="MEDIUM">Medium (game-ready)</option>
+                  <option value="HIGH">High</option>
+                  <option value="CINEMATIC">Cinematic</option>
+                </select>
+              </label>
+              <button type="button" onClick={startBuild} disabled={!view.canBuild.ok || busy} className="btn btn-primary">
+                {view.versions.length ? `Rebuild with ${view.photos.length} photos` : "Build my MetaHuman"}
+              </button>
+            </div>
+          )}
+          {!view.activeBuild && !view.canBuild.ok && view.canBuild.reason && (
+            <p className="text-sm text-muted">{view.canBuild.reason}</p>
+          )}
+          {actionError && <p className="text-sm text-danger">{actionError}</p>}
+          {!view.activeBuild && lastBuild?.status === "failed" && (
+            <p className="text-sm text-danger">Last build failed: {lastBuild.error ?? "unknown error"}</p>
+          )}
+        </section>
+      )}
 
       {/* History */}
       {view.versions.length > 0 && (
@@ -216,9 +233,11 @@ export function AvatarWorkspace({ initial }: { initial: AvatarView }) {
                 {v.isCurrent ? (
                   <span className="rounded-full bg-accent px-3 py-1 font-mono text-xs text-accent-ink">current</span>
                 ) : (
-                  <button type="button" onClick={() => promote(v.id)} className="btn btn-ghost px-3 py-1 text-xs">
-                    Make current
-                  </button>
+                  !view.readOnly && (
+                    <button type="button" onClick={() => promote(v.id)} className="btn btn-ghost px-3 py-1 text-xs">
+                      Make current
+                    </button>
+                  )
                 )}
               </li>
             ))}
